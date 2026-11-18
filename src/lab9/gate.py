@@ -41,15 +41,25 @@ def integrity_check(pr: dict, base: dict, spec: dict, base_spec: dict | None = N
         if isinstance(v, (int, float)) and (math.isnan(v) or math.isinf(v)):
             problems.append(f"metric {k} is {v}")
 
-    # 2. Check row count against manifest
+    # 2. Check row count against manifest and baseline
     m_items = pr.get("manifest", {}).get("items")
     m_seeds = pr.get("manifest", {}).get("seeds", [])
     if m_items is not None and m_seeds is not None:
         expected_count = m_items * len(m_seeds)
         if len(pr.get("rows", [])) != expected_count:
             problems.append(f"PR row count {len(pr.get('rows', []))} != expected {expected_count}")
+    if len(pr.get("rows", [])) != len(base.get("rows", [])):
+        problems.append(f"PR row count {len(pr.get('rows', []))} != baseline row count {len(base.get('rows', []))}")
 
-    # 3. Check (item_id, seed) set against baseline
+    # 3. Check duplicate rows and (item_id, seed) set against baseline
+    seen = set()
+    for r in pr.get("rows", []):
+        key = (r.get("item_id"), r.get("seed"))
+        if key in seen:
+            problems.append(f"PR contains duplicate row for item {key[0]} seed {key[1]}")
+            break
+        seen.add(key)
+
     pr_pairs = {(r.get("item_id"), r.get("seed")) for r in pr.get("rows", [])}
     base_pairs = {(r.get("item_id"), r.get("seed")) for r in base.get("rows", [])}
     if pr_pairs != base_pairs:
@@ -58,17 +68,21 @@ def integrity_check(pr: dict, base: dict, spec: dict, base_spec: dict | None = N
     if set(pr.get("manifest", {}).get("seeds", [])) != set(base.get("manifest", {}).get("seeds", [])):
         problems.append("PR seeds differ from baseline seeds")
 
-    # 4. Evaluator failures or row metric is None
+    # 4. Evaluator failures or row metric is None or NaN
     if pr.get("evaluator_failures"):
         problems.append(f"PR has evaluator_failures: {len(pr['evaluator_failures'])}")
 
-    graded_metrics = {m["id"] for m in spec.get("metrics", [])}
+    row_metrics = [m["id"] for m in spec.get("metrics", []) if pr.get("rows") and m["id"] in pr["rows"][0]]
     for r in pr.get("rows", []):
-        for mid in graded_metrics:
-            if mid in r and r[mid] is None:
+        for mid in row_metrics:
+            val = r.get(mid)
+            if val is None:
                 problems.append(f"row {r.get('item_id')} seed {r.get('seed')} has None for metric {mid}")
                 break
-        if problems and "has None for metric" in problems[-1]:
+            if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+                problems.append(f"row {r.get('item_id')} seed {r.get('seed')} has NaN/inf for metric {mid}")
+                break
+        if problems and any(term in problems[-1] for term in ("has None for metric", "has NaN/inf for metric")):
             break
 
     # 5. Check slice tags consistency with baseline
@@ -116,6 +130,8 @@ def integrity_check(pr: dict, base: dict, spec: dict, base_spec: dict | None = N
                 problems.append(f"slice {sname} was removed from spec")
                 continue
             cs_entry = curr_slices_spec[sname]
+            if bs_entry.get("metric") != cs_entry.get("metric"):
+                problems.append(f"slice {sname} metric changed from {bs_entry.get('metric')} to {cs_entry.get('metric')}")
             if bs_entry.get("blocking") and not cs_entry.get("blocking"):
                 problems.append(f"slice {sname} blocking relaxed to false")
             if "min" in bs_entry:
