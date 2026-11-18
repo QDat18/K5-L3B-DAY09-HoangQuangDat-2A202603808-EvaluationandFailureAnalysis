@@ -42,3 +42,13 @@ Card này đi kèm mỗi báo cáo và được dùng lại ở Day 10.
 - **Phạm vi pilot:** Các yêu cầu bồi thường phí giao trễ và hư hỏng hàng hóa cơ bản, giá trị bồi thường $\le 150.000$đ. Ngoài phạm vi: khiếu nại liên quan nhiều đơn hàng đồng thời, tranh chấp pháp lý.
 - **Giới hạn / bằng chứng còn thiếu:** Đo trên MockLLM và 14 claim (70 trials offline); kích thước mẫu 14 items có khoảng tin cậy CI tương đối rộng nên chỉ bắt được các hồi quy lớn ($\Delta \ge 0.15$); Judge replay trên CSV công khai, chưa có tập held-out độc lập từ môi trường thực.
 - **Khi nào tăng eval-set version:** Khi bổ sung thêm các vector tấn công đối kháng (adversarial pack), xuất hiện failure mode mới từ production trace, hoặc thay đổi chính sách bồi thường $\rightarrow$ Tăng lên `v2`, sinh lại baseline.
+
+## Phân tích nhiễu A/A & pass^k (M6)
+- **A/A Test (Noise floor):**
+  - Chạy `python -m lab9.mutation --spec config/metric_spec_v2.yaml --aa 66,77,88,99,110` trên bộ seed thay thế: cho $\Delta = 0.0000$ trên tất cả các metric.
+  - *Giải thích khác biệt giữa MockLLM và LLM thật:* Trên MockLLM, phản hồi mang tính xác định (deterministic) theo seed mô phỏng nên sai lệch giữa hai tập seed chuẩn là 0. Với LLM thật (như GPT-4o, Claude 3.5), nhiệt độ (temperature $> 0$), sampling ngẫu nhiên của token và non-determinism của phần cứng GPU khiến dải nhiễu tự nhiên luôn $> 0$ (thường dao động $\pm 1\%$ đến $\pm 3\%$).
+  - *Ý nghĩa đối với release gate:* Mọi sàn biến động (hoặc mức giảm tối đa cho phép) phải luôn được đặt **nằm ngoài dải nhiễu A/A**. Nếu đặt ngưỡng quá sát hoặc nằm trong dải nhiễu, CI gate sẽ liên tục gặp cảnh báo giả (false alarm) và chặn các PR hoàn toàn vô hại.
+- **Vai trò của `pass_hat_5` ($pass^k$ theo Tau-bench):**
+  - $pass@k$ đo xác suất *ít nhất một lần* thành công trong $k$ lần thử.
+  - $pass^k$ ($pass\wedge k$) đo xác suất *tất cả* $k$ lần thử đều thành công.
+  - Một agent tài chính tin cậy phải giữ $pass^k$ sát với $pass@1$. Trong variant `flaky_regression` (bug làm tròn 1/5 seed), `pass_rate` trung bình vẫn đạt $91.43\%$ (dễ lọt qua sàn 85%), nhưng `pass_hat_5` giảm sâu từ $89.29\%$ xuống $57.14\%$ và bị chốt chặn `pass_hat_5 \ge 0.80` chặn đứng.
