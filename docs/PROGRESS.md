@@ -1,17 +1,17 @@
 # Progress: Lab 9 - Evaluation & Failure Analysis
 
-- **Status**: Setup M0 Ready
-- **Branch**: main (starter/d09 deleted as requested, ready to recreate clean)
+- **Status**: M1 Completed, Moving to M2
+- **Branch**: starter/d09
 - **Done**:
-  - Analyzed all lab requirements (README, RUBRIC, CHECKPOINTS, SUBMISSION).
-  - Verified original Day 8 repo cloned at `DAY09/day8-goc`.
-  - Cleaned up accidental nested folders and removed preliminary branch.
+  - M0 setup: clean Day 8 integration, initial evalset build.
+  - M1: Defined 9 Failure Modes in `docs/failure_taxonomy.md` (all 5 anchors matched).
+  - M1: Mapped `failure_modes` for 14 claims in `src/lab9/evalset.py`.
+  - M1 verification: `python -m lab9.evalset --build --check` passed with 0 problems.
+  - M1 tests: `pytest tests/test_lab9_evalset.py` passed 3/3.
 - **In progress**:
-  - M0 setup: copy `day8-goc/src/*` into `src/`, verify with `smoke.py`.
+  - M2: Implementing stats.py (confusion, precision_recall, kappa, rogan_gladen).
 - **Next**:
-  - M1: Failure taxonomy & Eval set v1 tagging.
-  - M2: Judge calibration & audit.
+  - Run judge calibration on `judge_tone_public.csv` & `judge_helpful_public.csv`.
+  - Fill `docs/judge_audit.md` (≥5 disagreements audit).
   - M3: Trajectory graders & FM-08 custom metric.
-  - M4: Bootstrap CI & Gate baseline.
 - **Blockers**: None.
-
