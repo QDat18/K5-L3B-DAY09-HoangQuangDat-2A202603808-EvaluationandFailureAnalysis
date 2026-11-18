@@ -2,10 +2,10 @@
 
 Card này đi kèm mỗi báo cáo và được dùng lại ở Day 10.
 
-- **Run ID / eval set SHA:** Baseline Run ID: `E-swarm-20261118-c490` · Eval set SHA: `c49038eeeecf`
+- **Run ID / eval set SHA:** Baseline Run ID: `E-swarm-20261118-8d12` · Eval set SHA: `8d12ad59631f`
 - **Phiên bản:**
   - Code commit: `ae5ebf0` (nhánh `starter/d09`)
-  - Eval set: `v1` (sha `c49038eeeecf`)
+  - Eval set: `v1` (sha `8d12ad59631f`)
   - Metric spec: `config/metric_spec.yaml` (version `1.0`)
   - Graders: `src/lab9/graders.py`
   - Seeds: `[11, 22, 33, 44, 55]`

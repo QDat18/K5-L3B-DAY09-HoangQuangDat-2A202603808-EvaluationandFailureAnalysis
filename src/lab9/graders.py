@@ -61,6 +61,10 @@ class RefundAmountCorrect(Evaluator[Any, Trial]):
         actual = ctx.output.get("snapshot", {}).get("refund_vnd", 0)
         expected = label.get("refund_vnd", 0)
         ok = (actual == expected)
+        res = ctx.output.get("result") or {}
+        if "proposal_amount" in label and "proposal_amount" in res:
+            if res["proposal_amount"] != label["proposal_amount"]:
+                ok = False
         return EvaluationReason(value=ok, reason=None if ok else f"refund {actual} != expected {expected}")
 
 
